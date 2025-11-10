@@ -298,3 +298,18 @@ kubectl port-forward -n istio-system svc/kiali 20001:20001
 ```
 
 ![](images/kiali-agents.png)
+
+## Load Generation
+
+Now that we have Ambient Mesh installed, Observability in place, and kagent configured, let's put it to the test. We're going to ask kagent to help us generate a load testing tool and then fix any issues that occur.
+
+### Create The Load Testing Tool
+
+1. Sign into kagent
+2. Go to the k8s-agent agent
+3. Prompt it with the following:
+```
+
+```
+
+You should see that it gives you an output for a [Fortio](https://github.com/fortio/fortio)
