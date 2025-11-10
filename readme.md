@@ -228,6 +228,16 @@ helm repo update
 helm install kube-prometheus -n monitoring prometheus-community/kube-prometheus-stack --create-namespace
 ```
 
+To build a dashboard with the metrics
+```
+kubectl --namespace monitoring port-forward svc/kube-prometheus-grafana 3000:80
+```
+
+To log into the Grafana UI:
+
+1. Username: admin
+2. Password: prom-operator
+
 ### Ambient
 ```
 kubectl apply -f - <<EOF
@@ -275,17 +285,48 @@ spec:
 EOF
 ```
 
-## Ambient & Kiali Configuration
+## Diving Into kagent
 
+The configuration below deploys an Nginx Pod, but notice how the image name is wrong. Instead of the tag being latest, it's latesttt, which means the deployment will fail.
+
+1. Deploy the below Manifest. It will fail, but that is on purpose.
+```
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ngi14
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latesttttt
+    ports:
+    - containerPort: 80
+EOF
+```
+
+2. Open up kagent and go to the pre-built k8s-agent Agent.
+
+3. Prompt the Agent by saying :
+```
+Why is the Nginx Pod failing in my default namespace?
+```
+
+4. You'll notice that kagent goes through several steps to not only debug the issue, but fix it.
+
+## Ambient & Kiali Configuration
+1. Label the kagent Namespace for Ambient
 ```
 kubectl label namespace kagent istio.io/dataplane-mode=ambient
 ```
 
+2. Add Kiali
 ```
 helm repo add kiali https://kiali.org/helm-charts
 helm repo update
 ```
 
+3. Install Kiali
 ```
 helm install kiali-server kiali/kiali-server \
   -n istio-system \
@@ -293,6 +334,7 @@ helm install kiali-server kiali/kiali-server \
   --set external_services.prometheus.url="http://kube-prometheus-kube-prome-prometheus.monitoring.svc.cluster.local:9090"
 ```
 
+4. Access Kiali
 ```
 kubectl port-forward -n istio-system svc/kiali 20001:20001
 ```
