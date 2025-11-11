@@ -236,7 +236,7 @@ kubectl --namespace monitoring port-forward svc/kube-prometheus-grafana 3000:80
 To log into the Grafana UI:
 
 1. Username: admin
-2. Password: prom-operator
+2. Password: OYD6d5kegTNezxlJSWZyIOfwXmBDxn9XarTpJRbZ
 
 ### Ambient
 ```
@@ -345,18 +345,93 @@ kubectl port-forward -n istio-system svc/kiali 20001:20001
 
 Now that we have Ambient Mesh installed, Observability in place, and kagent configured, let's put it to the test. We're going to ask kagent to help us generate a load testing tool and then fix any issues that occur.
 
-### Create The Load Testing Tool
+We'll stress test kagent's self-healing capabilities under realistic production load.
 
-1. Sign into kagent
-2. Go to the k8s-agent agent
-3. Prompt it with the following:
+1. Deploy a sample web application with an intentional misconfiguration:
+```
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+      - name: demo-app
+        image: nginx:latesttttt  # Intentional typo
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: "10Mi"  # Intentionally too low
+            cpu: "10m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  namespace: default
+spec:
+  selector:
+    app: demo-app
+  ports:
+  - port: 80
+    targetPort: 80
+EOF
 ```
 
+2. Deploy Fortio as a load generator:
+```
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortio
+  namespace: default
+spec:
+  containers:
+  - name: fortio
+    image: fortio/fortio:latest
+    command: ["/bin/sh"]
+    args: ["-c", "sleep infinity"]
+EOF
 ```
 
-You should see that it gives you an output for a [Fortio](https://github.com/fortio/fortio)
+3. Wait for the Fortio pod to be ready:
+```
+kubectl wait --for=condition=ready pod/fortio -n default --timeout=60s
+```
 
-### Generate Load & Fix
+4. Start generating load with Fortio (run this in a separate terminal):
+```
+kubectl exec -it fortio -n default -- fortio load -c 50 -qps 100 -t 5m http://demo-app.default.svc.cluster.local
+```
+
+5. While the load test is running, open kagent and prompt the k8s-agent:
+```
+The demo-app deployment in the default namespace is failing. Can you investigate and fix all issues?
+```
+
+6. Watch kagent autonomously:
+   - Detect the image pull error (nginx:latesttttt)
+   - Fix the image tag to nginx:latest
+   - Identify the insufficient memory limits
+   - Adjust resource limits appropriately
+   - Monitor pod recovery
+
+7. Observe the Fortio output showing error rates decrease as kagent fixes the issues in real-time.
+
+This demonstrates kagent's AI-powered self-healing under sustained production load, showcasing autonomous problem detection and resolution while traffic continues flowing.
+
 
 ## Securing LLM Connectivity
 
