@@ -356,7 +356,7 @@ metadata:
   name: demo-app
   namespace: default
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: demo-app
@@ -367,7 +367,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: nginx:latesttttt  # Intentional typo
+        image: nginx:latest
         ports:
         - containerPort: 80
         resources:
@@ -418,19 +418,8 @@ kubectl exec -it fortio -n default -- fortio load -c 50 -qps 100 -t 5m http://de
 
 5. While the load test is running, open kagent and prompt the k8s-agent:
 ```
-The demo-app deployment in the default namespace is failing. Can you investigate and fix all issues?
+I have a fair amount of load hitting my `demo-app` deployment right now. Can you scale it up for me to avoid performance issues?
 ```
-
-6. Watch kagent autonomously:
-   - Detect the image pull error (nginx:latesttttt)
-   - Fix the image tag to nginx:latest
-   - Identify the insufficient memory limits
-   - Adjust resource limits appropriately
-   - Monitor pod recovery
-
-7. Observe the Fortio output showing error rates decrease as kagent fixes the issues in real-time.
-
-This demonstrates kagent's AI-powered self-healing under sustained production load, showcasing autonomous problem detection and resolution while traffic continues flowing.
 
 
 ## Securing LLM Connectivity
