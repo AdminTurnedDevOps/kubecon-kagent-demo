@@ -427,7 +427,7 @@ I have a fair amount of load hitting my `demo-app` deployment right now. Can you
 ### Installing agentgateway
 
 ```
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
 ```
 
 ```
