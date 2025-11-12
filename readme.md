@@ -401,8 +401,8 @@ spec:
   containers:
   - name: fortio
     image: fortio/fortio:latest
-    command: ["/bin/sh"]
-    args: ["-c", "sleep infinity"]
+    command: ["fortio"]
+    args: ["server"]
 EOF
 ```
 
